@@ -1,0 +1,174 @@
+{
+  "name": "Email Newsletter",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [-960, -96],
+      "id": "feae04a0-8bf5-4734-baef-51cc07444cc4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f8f04e45-c331-4e6e-950d-d8283981937b",
+              "name": "string",
+              "value": "https://techcrunch.com/feed/",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-752, -96],
+      "id": "5558e36f-d1e6-470f-990c-4c564087aacd",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.string }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [-528, -96],
+      "id": "156925f1-cfd6-4a98-94e1-fe184549f201",
+      "name": "RSS Read"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.slice(0,5);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, -96],
+      "id": "96709ec2-e40c-40f1-b6c8-c7ba16436717",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = items.map((item, index) => {\n  return `${index + 1}. Title: ${item.json.title}\\nSummary: ${item.json.contentSnippet}`;\n}).join('\\n\\n');\n\nreturn [\n  {\n    json: {\n      data: output\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-112, -96],
+      "id": "7463c46d-b11d-4d04-a02a-2e2fe4a000c3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a short daily tech newsletter from these RSS articles:\n\n{{ $json.data }}",
+        "options": {
+          "systemMessage": "You are a concise technology news editor.\n\nRead the provided RSS articles and create a short professional daily tech digest.\n\nRules:\n- choose only the most important 3 to 5 stories\n- write short summaries\n- human newsletter style\n- concise output only"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [80, -96],
+      "id": "d99b5f0e-9eeb-463b-b305-7becda82c70f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "mode": "markdownToHtml",
+        "markdown": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [400, -96],
+      "id": "394dba6d-68a1-453f-bac8-882a3b0dc63e",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [-64, 112],
+      "id": "a68f3b95-286b-4913-be7d-2e2b66670f13",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "YOUR_EMAIL_HERE",
+        "subject": "News Letter",
+        "message": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [608, -96],
+      "id": "3cf4cf09-aea1-44ed-8b93-d842a1787766",
+      "name": "Send a message",
+      "webhookId": "",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Edit Fields", "type": "main", "index": 0 }]]
+    },
+    "Edit Fields": {
+      "main": [[{ "node": "RSS Read", "type": "main", "index": 0 }]]
+    },
+    "RSS Read": {
+      "main": [[{ "node": "Code in JavaScript", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript": {
+      "main": [[{ "node": "Code in JavaScript1", "type": "main", "index": 0 }]]
+    },
+    "Code in JavaScript1": {
+      "main": [[{ "node": "AI Agent", "type": "main", "index": 0 }]]
+    },
+    "AI Agent": {
+      "main": [[{ "node": "Markdown", "type": "main", "index": 0 }]]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Markdown": {
+      "main": [[{ "node": "Send a message", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "9ff733b1-576e-4abd-bbfc-00e1a5ebdd96",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": ""
+  },
+  "id": "OlK8EvCgbU8bFg6z",
+  "tags": []
+}
